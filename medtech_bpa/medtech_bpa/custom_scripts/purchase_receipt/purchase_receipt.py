@@ -27,10 +27,75 @@ def validate(doc, method):
 				if item.item_code not in qc_disable_items and not item.quality_inspection and doc.workflow_state =="For Receipt" and doc.is_return != 1:
 					frappe.msgprint(_("Create Quality Inspection for Item {0}").format(frappe.bold(item.item_code)))
 					qc_required_items.append(item.item_code)
+		
+		after_dup_removed = []
+		
+		for item in doc.items:
+			if item.item_code not in after_dup_removed:
+				after_dup_removed.append(item.item_code)
+				if item.quality_inspection:
+					quality_inspection_data  = frappe.db.get_value("Quality Inspection", item.quality_inspection, ["rejected_quantity","rejected_warehouse"],as_dict=1)
+					item.custom_rejected_qty = quality_inspection_data.get('rejected_quantity')
+					item.rejected_warehouse = quality_inspection_data.get('rejected_warehouse')
+
+				if item.physically_verified_quantity and item.billed_qty:
+					diff = flt(item.physically_verified_quantity) -  flt(item.billed_qty)
+					if diff < 0:
+						item.short_quantity =  abs(diff)
+						item.excess_quantity = 0
+					elif diff >= 0: 
+						item.excess_quantity = diff
+						item.short_quantity =  0
+
+					item.qty = item.billed_qty
+					accepted_qty = item.qty - abs(item.short_quantity) + item.excess_quantity - item.custom_rejected_qty
+					item.actual_accepted_qty = accepted_qty
+			else:
+				if item.physically_verified_quantity and item.billed_qty:
+					diff = flt(item.physically_verified_quantity) - flt(item.billed_qty)
+					if diff < 0:
+						item.short_quantity =  abs(diff)
+						item.excess_quantity = 0
+					elif diff >= 0: 
+						item.excess_quantity = diff
+						item.short_quantity =  0
+					item.qty = item.billed_qty
+					accepted_qty = item.qty - abs(item.short_quantity) + item.excess_quantity - item.custom_rejected_qty
+					item.actual_accepted_qty = accepted_qty
+
+
+
+					
+
+
+'''
+def validate(doc, method):
+	if doc.is_return:
+		setting_doc = frappe.get_single('MedTech Settings')
+		if setting_doc.get('rejected_warehouse') == doc.set_warehouse:
+			doc.return_for_warehouse = "Purchase Return"
+		elif setting_doc.get('short_warehouse') == doc.set_warehouse:
+			doc.return_for_warehouse = "Debit Note"
+		elif setting_doc.get('excess_warehouse') == doc.set_warehouse:
+			doc.return_for_warehouse = "Credit Note"
+		else:
+			doc.return_for_warehouse = ''
+
+	# fix variable rate
+	set_po_item_rate(doc)
+
+	if doc.items:
+		if doc.is_return != 1 and doc.get('__islocal')!= 1:
+			qc_disable_items = get_qc_disable_items(doc.supplier)
+			qc_required_items =[]
+			for item in doc.items:
+				if item.item_code not in qc_disable_items and not item.quality_inspection and doc.workflow_state =="For Receipt" and doc.is_return != 1:
+					frappe.msgprint(_("Create Quality Inspection for Item {0}").format(frappe.bold(item.item_code)))
+					qc_required_items.append(item.item_code)
 		for item in doc.items:
 			if item.quality_inspection:
 				quality_inspection_data  = frappe.db.get_value("Quality Inspection", item.quality_inspection, ["rejected_quantity","rejected_warehouse"],as_dict=1)
-
+				
 				item.custom_rejected_qty = quality_inspection_data.get('rejected_quantity')
 				item.rejected_warehouse = quality_inspection_data.get('rejected_warehouse')
 
@@ -47,6 +112,10 @@ def validate(doc, method):
 				accepted_qty = item.qty - abs(item.short_quantity) + item.excess_quantity - item.custom_rejected_qty
 
 				item.actual_accepted_qty = accepted_qty
+
+
+
+'''
 	
 			
 def before_submit(doc, method):
@@ -241,6 +310,7 @@ def get_qc_disable_items(supplier):
 	return qc_disable_items
 
 
+
 @frappe.whitelist()
 def on_submit(doc, method):
 	excess_qty_items = []
@@ -265,6 +335,8 @@ def on_submit(doc, method):
 	if len(rejected_qty_items) > 0:
 		target_warehouse = get_warehouse.rejected_warehouse
 		make_material_transfer(rejected_qty_items,doc, target_warehouse)
+
+
 
 @frappe.whitelist()
 def make_material_receipt(items,doc, target_warehouse):
