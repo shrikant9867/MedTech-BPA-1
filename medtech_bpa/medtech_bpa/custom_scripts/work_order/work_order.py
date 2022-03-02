@@ -12,8 +12,15 @@ def on_submit(doc,method):
 		for item in doc.required_items:
 			if item.item_code == row.item_code:
 				actual_qty = get_available_item_qty_in_wip(item.item_code,doc.wip_warehouse,doc.company)
+				
 				qty_to_be_issued = (item.required_qty - row.qty_in_wip_warehouse) if (item.required_qty - row.qty_in_wip_warehouse) > 0 else 0
+				if qty_to_be_issued > 0:
+					available_qty_at_wip_warehouse = 0
+				elif qty_to_be_issued == 0:
+					available_qty_at_wip_warehouse = item.available_qty_at_wip_warehouse - item.required_qty
+
 				frappe.db.set_value("Work Order Item",{'parent':doc.name,'item_code':item.item_code},'qty_to_be_issued',qty_to_be_issued)
+				frappe.db.set_value("Material Request Plan Item",{'parent':production_plan_doc.name,'item_code':item.item_code},'qty_in_wip_warehouse',available_qty_at_wip_warehouse)
 				frappe.db.commit()
 				# if len(actual_qty) > 0:
 				# 	item.qty_to_be_issued = item.required_qty - actual_qty[0].get("qty")
