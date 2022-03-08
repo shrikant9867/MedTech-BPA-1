@@ -116,8 +116,9 @@ app_license = "MIT"
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
+#override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "medtech_bpa.vent.get_events"
+#	erpnext.accounts.doctype.purchase_invoice.validate_supplier_invoice:medtech_bpa.medtech_bpa.custom_scripts.purchase_invoice.purchase_invoice.validate_supplier_invoice_no
 # }
 #
 # each overriding function accepts a `data` argument;
@@ -184,3 +185,39 @@ doc_events = {
 		"on_submit":"medtech_bpa.medtech_bpa.custom_scripts.sales_invoice.sales_invoice.on_submit"
 	}
 }
+
+import frappe
+from frappe.utils import flt,today, get_link_to_form
+from frappe.utils import cint, cstr, flt, formatdate, get_link_to_form, getdate, nowdate
+from erpnext.accounts.utils import get_account_currency, get_fiscal_year
+from frappe import _
+from erpnext.accounts.doctype.purchase_invoice.purchase_invoice import PurchaseInvoice
+def validate_supplier_invoice_no(self):
+		if self.bill_date:
+			if getdate(self.bill_date) > getdate(self.posting_date):
+				frappe.throw(_("Supplier Invoice Date cannot be greater than Posting Date"))
+
+		if self.bill_no:
+			if cint(frappe.db.get_single_value("Accounts Settings", "check_supplier_invoice_uniqueness")):
+				fiscal_year = get_fiscal_year(self.posting_date, company=self.company, as_dict=True)
+
+				if not self.is_rate_differences__credit_note :
+					pi = frappe.db.sql('''select name from `tabPurchase Invoice`
+						where
+							bill_no = %(bill_no)s
+							and supplier = %(supplier)s
+							and name != %(name)s
+							and docstatus < 2
+							and is_rate_differences__credit_note != 1
+						 	and posting_date between %(year_start_date)s and %(year_end_date)s''', {
+								"bill_no": self.bill_no,
+								"supplier": self.supplier,
+								"name": self.name,
+								"year_start_date": fiscal_year.year_start_date,
+								"year_end_date": fiscal_year.year_end_date
+						 	})
+
+					if pi:
+						pi = pi[0][0]
+						frappe.throw(_("Supplier Invoice No exists in Purchase1 Invoice {0}").format(pi))
+PurchaseInvoice.validate_supplier_invoice=validate_supplier_invoice_no
