@@ -133,6 +133,7 @@ frappe.ui.form.on("Purchase Receipt Item", {
 	},
 	quality_inspection:function(frm,cdt,cdn) {
 		var row = locals[cdt][cdn]
+		
 		if (row.quality_inspection){
 
 			frappe.call({
@@ -173,11 +174,13 @@ frappe.ui.form.on("Purchase Receipt Item", {
 						var accepted_qty = row.billed_qty - row.short_quantity + row.excess_quantity - row.custom_rejected_qty
 						frappe.model.set_value(cdt, cdn, 'actual_accepted_qty', accepted_qty);		
 						frm.refresh_field("actual_accepted_qty");
+						
 					}
 				}
 			});		
 
 		}
 	}
+	
 });
 
