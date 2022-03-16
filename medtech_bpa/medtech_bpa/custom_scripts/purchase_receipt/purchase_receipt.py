@@ -12,6 +12,7 @@ def validate(doc, method):
 		elif setting_doc.get('short_warehouse') == doc.set_warehouse:
 			doc.return_for_warehouse = "Debit Note"
 		elif setting_doc.get('excess_warehouse') == doc.set_warehouse:
+			frappe.msgprint("inside validate ")
 			doc.return_for_warehouse = "Credit Note"
 		else:
 			doc.return_for_warehouse = ''
@@ -324,6 +325,7 @@ def on_submit(doc, method):
 			excess_qty_items.append(item)
 		elif item.short_quantity > 0:
 			short_qty_items.append(item)
+	
 
 	get_warehouse = frappe.get_single('MedTech Settings')
 	if len(excess_qty_items) > 0:
@@ -337,7 +339,6 @@ def on_submit(doc, method):
 		make_material_transfer(rejected_qty_items,doc, target_warehouse)
 
 
-
 @frappe.whitelist()
 def make_material_receipt(items,doc, target_warehouse):
 	current_date = frappe.utils.today()
@@ -345,7 +346,7 @@ def make_material_receipt(items,doc, target_warehouse):
 		stock_entry = frappe.new_doc("Stock Entry")
 		if stock_entry:
 			stock_entry.posting_date = current_date
-			stock_entry.stock_entry_type = "Material Excess From Supplier"
+			stock_entry.stock_entry_type = "Send to Excess Warehouse"
 			stock_entry.purchase_receipt = doc.name
 			for item in items:
 				stock_entry.append("items",{
@@ -355,13 +356,15 @@ def make_material_receipt(items,doc, target_warehouse):
 					'description': item.get('description'),
 					'uom': item.get('uom'),
 					'qty':flt(item.get('excess_quantity')),
-					's_warehouse': item.get('warehouse'),
 					't_warehouse': target_warehouse,
 					'basic_rate' : item.get('rate')
 				})
+				
 			stock_entry.save(ignore_permissions = True)
-			stock_entry.submit()		
-	
+			stock_entry.submit()
+
+
+
 
 @frappe.whitelist()
 def make_material_issue(items,doc, target_warehouse):
