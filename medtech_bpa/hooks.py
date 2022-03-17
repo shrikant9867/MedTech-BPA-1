@@ -116,8 +116,9 @@ app_license = "MIT"
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
+#override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "medtech_bpa.vent.get_events"
+#	erpnext.accounts.doctype.purchase_invoice.validate_supplier_invoice:medtech_bpa.medtech_bpa.custom_scripts.purchase_invoice.purchase_invoice.validate_supplier_invoice_no
 # }
 #
 # each overriding function accepts a `data` argument;
