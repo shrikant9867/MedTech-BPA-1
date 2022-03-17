@@ -311,6 +311,18 @@ def get_qc_disable_items(supplier):
 	return qc_disable_items
 
 
+def after_insert(doc, method):
+	if doc.items:
+		for item in doc.items:
+			warehouse = 0
+			if item.quality_inspection == None:
+				get_warehouse = frappe.get_single('MedTech Settings')
+				warehouse = get_warehouse.qc_warehouse
+				
+				frappe.db.update("Purchase Receipt Item",{'parent':doc.name,'item_code':item.item_code},'warehouse',warehouse)
+				frappe.db.commit()	
+
+
 
 @frappe.whitelist()
 def on_submit(doc, method):
