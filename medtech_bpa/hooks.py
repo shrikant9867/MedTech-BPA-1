@@ -148,9 +148,7 @@ doc_events = {
 		"validate":"medtech_bpa.medtech_bpa.custom_scripts.purchase_receipt.purchase_receipt.validate",
 		"before_save":"medtech_bpa.medtech_bpa.custom_scripts.purchase_receipt.purchase_receipt.before_save",
 		"before_submit":"medtech_bpa.medtech_bpa.custom_scripts.purchase_receipt.purchase_receipt.before_submit",
-		"on_submit": "medtech_bpa.medtech_bpa.custom_scripts.purchase_receipt.purchase_receipt.on_submit",
-		"after_insert": "medtech_bpa.medtech_bpa.custom_scripts.purchase_receipt.purchase_receipt.after_insert"
-		
+		"on_submit": "medtech_bpa.medtech_bpa.custom_scripts.purchase_receipt.purchase_receipt.on_submit"	
 	},
 	"Quality Inspection":{
 		"validate":"medtech_bpa.medtech_bpa.custom_scripts.quality_inspection.quality_inspection.validate",
@@ -222,3 +220,4 @@ def validate_supplier_invoice_no(self):
 						pi = pi[0][0]
 						frappe.throw(_("Supplier Invoice No exists in Purchase1 Invoice {0}").format(pi))
 PurchaseInvoice.validate_supplier_invoice=validate_supplier_invoice_no
+

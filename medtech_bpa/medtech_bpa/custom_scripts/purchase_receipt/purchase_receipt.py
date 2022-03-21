@@ -4,6 +4,7 @@ import frappe
 from frappe.utils import flt,today, get_link_to_form
 from frappe import _
 
+
 def validate(doc, method):
 	if doc.is_return:
 		setting_doc = frappe.get_single('MedTech Settings')
@@ -12,7 +13,7 @@ def validate(doc, method):
 		elif setting_doc.get('short_warehouse') == doc.set_warehouse:
 			doc.return_for_warehouse = "Debit Note"
 		elif setting_doc.get('excess_warehouse') == doc.set_warehouse:
-			frappe.msgprint("inside validate ")
+			frappe.msgprint("inside validate")
 			doc.return_for_warehouse = "Credit Note"
 		else:
 			doc.return_for_warehouse = ''
@@ -64,62 +65,13 @@ def validate(doc, method):
 					accepted_qty = item.qty - abs(item.short_quantity) + item.excess_quantity - item.custom_rejected_qty
 					item.actual_accepted_qty = accepted_qty
 
-
-
-					
-
-
-'''
-def validate(doc, method):
-	if doc.is_return:
-		setting_doc = frappe.get_single('MedTech Settings')
-		if setting_doc.get('rejected_warehouse') == doc.set_warehouse:
-			doc.return_for_warehouse = "Purchase Return"
-		elif setting_doc.get('short_warehouse') == doc.set_warehouse:
-			doc.return_for_warehouse = "Debit Note"
-		elif setting_doc.get('excess_warehouse') == doc.set_warehouse:
-			doc.return_for_warehouse = "Credit Note"
-		else:
-			doc.return_for_warehouse = ''
-
-	# fix variable rate
-	set_po_item_rate(doc)
-
-	if doc.items:
-		if doc.is_return != 1 and doc.get('__islocal')!= 1:
-			qc_disable_items = get_qc_disable_items(doc.supplier)
-			qc_required_items =[]
-			for item in doc.items:
-				if item.item_code not in qc_disable_items and not item.quality_inspection and doc.workflow_state =="For Receipt" and doc.is_return != 1:
-					frappe.msgprint(_("Create Quality Inspection for Item {0}").format(frappe.bold(item.item_code)))
-					qc_required_items.append(item.item_code)
-		for item in doc.items:
-			if item.quality_inspection:
-				quality_inspection_data  = frappe.db.get_value("Quality Inspection", item.quality_inspection, ["rejected_quantity","rejected_warehouse"],as_dict=1)
-				
-				item.custom_rejected_qty = quality_inspection_data.get('rejected_quantity')
-				item.rejected_warehouse = quality_inspection_data.get('rejected_warehouse')
-
-			if item.physically_verified_quantity and item.billed_qty:
-				diff = flt(item.physically_verified_quantity) -  flt(item.billed_qty)
-				if diff < 0:
-					item.short_quantity =  abs(diff)
-					item.excess_quantity = 0
-				elif diff >= 0: 
-					item.excess_quantity = diff
-					item.short_quantity =  0
-
-				item.qty = item.billed_qty
-				accepted_qty = item.qty - abs(item.short_quantity) + item.excess_quantity - item.custom_rejected_qty
-
-				item.actual_accepted_qty = accepted_qty
-
-
-
-'''
-	
-			
-def before_submit(doc, method):
+def before_submit(doc,method):
+	get_warehouse = frappe.get_single('MedTech Settings')
+	for item in doc.items:
+		if not item.quality_inspection:
+			item.warehouse = get_warehouse.qc_warehouse
+						
+'''def before_submit(doc, method):
 	qc_disable_items = get_qc_disable_items(doc.supplier)
 	get_warehouse = frappe.get_single('MedTech Settings')
 	qc_check = 0
@@ -133,7 +85,7 @@ def before_submit(doc, method):
 	# 		else:
 	# 			item.warehouse = get_warehouse.qc_warehouse
 	# 	doc.set_warehouse = get_warehouse.rm_warehouse if qc_check == 1 else get_warehouse.qc_warehouse
-		
+	'''	
 
 def set_po_item_rate(doc):
 	if doc.items:
@@ -165,7 +117,6 @@ def map_pr_qty_to_po_qty(doc):
 		item_temp_qty = item.qty
 		for po in po_list_data:
 			po_temp_qty = po.get("remaining_qty")
-			print("}}}}}}}}}}}}}}}}}}}}}}}}}", po_temp_qty)
 			if po.get("item_code") == item.item_code and po_temp_qty > 0 and item_temp_qty > 0:
 				if item_temp_qty > po_temp_qty:
 					qc_name = frappe.db.get_value("Quality Inspection",{'reference_name':doc.name,'item_code':item.item_code},'name')
@@ -194,9 +145,7 @@ def map_pr_qty_to_po_qty(doc):
 						'asset_category':asset_category
 					}
 					item_temp_qty = item_temp_qty  - po_temp_qty
-					print("\n\niiiiii", item_temp_qty)
 					po_temp_qty = po_temp_qty -item_temp_qty
-					print("\n\nuuuuuu", po_temp_qty)
 					po['remaining_qty'] = po_temp_qty
 					item_list.append(temp)
 
@@ -296,9 +245,9 @@ def get_purchase_order(supplier):
 			from `tabPurchase Order Item` pi join `tabPurchase Order` po on pi.parent = po.name 
 			where po.supplier = '{0}' and ((pi.qty - pi.received_qty) - pi.returned_qty) > 0 and po.docstatus = 1 and po.status not in ('Closed', 'Completed', 'To Bill') 
 			order by po.transaction_date,po.modified asc'''.format(supplier)
-	print("*********************", query)
+	#print("*********************", query)
 	po_list = frappe.db.sql(query, as_dict=1,debug=1)
-	print("}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}", po_list)
+	#print("}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}", po_list)
 	return po_list
 
 
@@ -309,18 +258,6 @@ def get_qc_disable_items(supplier):
 	qc_disable_items = frappe.db.sql(query, as_dict=1)
 	qc_disable_items = [ item.get('item_code') for item in qc_disable_items]
 	return qc_disable_items
-
-
-def after_insert(doc, method):
-	if doc.items:
-		for item in doc.items:
-			warehouse = 0
-			if item.quality_inspection == None:
-				get_warehouse = frappe.get_single('MedTech Settings')
-				warehouse = get_warehouse.qc_warehouse
-				
-				frappe.db.update("Purchase Receipt Item",{'parent':doc.name,'item_code':item.item_code},'warehouse',warehouse)
-				frappe.db.commit()	
 
 
 
@@ -338,7 +275,6 @@ def on_submit(doc, method):
 		elif item.short_quantity > 0:
 			short_qty_items.append(item)
 	
-
 	get_warehouse = frappe.get_single('MedTech Settings')
 	if len(excess_qty_items) > 0:
 		target_warehouse = get_warehouse.excess_warehouse
