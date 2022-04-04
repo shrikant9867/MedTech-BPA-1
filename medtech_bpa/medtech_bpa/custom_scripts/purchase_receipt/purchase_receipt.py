@@ -5,6 +5,7 @@ from frappe.utils import flt,today, get_link_to_form
 from frappe import _
 
 
+
 def validate(doc, method):
 	if doc.is_return:
 		setting_doc = frappe.get_single('MedTech Settings')
@@ -71,6 +72,8 @@ def validate(doc, method):
 	for item in doc.items:
 		if not item.quality_inspection:
 			item.warehouse = get_warehouse.qc_warehouse'''
+
+# quarntine warehouse - if no QC (return VIR - no quarntine warehouse)
 
 def before_submit(doc,method):
 	if doc.is_return == 0:
