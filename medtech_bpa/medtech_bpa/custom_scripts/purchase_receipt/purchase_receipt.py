@@ -5,6 +5,7 @@ from frappe.utils import flt,today, get_link_to_form
 from frappe import _
 
 
+
 def validate(doc, method):
 	if doc.is_return:
 		setting_doc = frappe.get_single('MedTech Settings')
@@ -30,6 +31,7 @@ def validate(doc, method):
 					frappe.msgprint(_("Create Quality Inspection for Item {0}").format(frappe.bold(item.item_code)))
 					qc_required_items.append(item.item_code)
 		
+		#dup_removed = []
 		after_dup_removed = []
 		
 		for item in doc.items:
@@ -65,11 +67,26 @@ def validate(doc, method):
 					accepted_qty = item.qty - abs(item.short_quantity) + item.excess_quantity - item.custom_rejected_qty
 					item.actual_accepted_qty = accepted_qty
 
-def before_submit(doc,method):
+'''def before_submit(doc,method):
 	get_warehouse = frappe.get_single('MedTech Settings')
 	for item in doc.items:
 		if not item.quality_inspection:
-			item.warehouse = get_warehouse.qc_warehouse
+			item.warehouse = get_warehouse.qc_warehouse'''
+
+# quarntine warehouse - if no QC (return VIR - no quarntine warehouse)
+
+def before_submit(doc,method):
+	if doc.is_return == 0:
+		get_warehouse = frappe.get_single('MedTech Settings')
+		for item in doc.items:
+			if not item.quality_inspection:
+				item.warehouse = get_warehouse.qc_warehouse
+
+
+
+
+
+
 						
 '''def before_submit(doc, method):
 	qc_disable_items = get_qc_disable_items(doc.supplier)
