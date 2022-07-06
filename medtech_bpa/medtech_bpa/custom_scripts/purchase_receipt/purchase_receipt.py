@@ -42,7 +42,7 @@ def validate(doc, method):
 					item.custom_rejected_qty = quality_inspection_data.get('rejected_quantity')
 					item.rejected_warehouse = quality_inspection_data.get('rejected_warehouse')
 
-				if item.physically_verified_quantity and item.billed_qty:
+				if item.billed_qty and  (item.physically_verified_quantity or item.physically_verified_quantity == 0): 
 					diff = flt(item.physically_verified_quantity) -  flt(item.billed_qty)
 					if diff < 0:
 						item.short_quantity =  abs(diff)
