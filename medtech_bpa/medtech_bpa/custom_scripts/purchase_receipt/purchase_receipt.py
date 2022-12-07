@@ -126,134 +126,139 @@ def before_save(doc,method):
 		map_pr_qty_to_po_qty(doc)
 
 
-@frappe.whitelist()
-def map_pr_qty_to_po_qty(doc):
-	po_list_data = get_purchase_order(doc.supplier)
-	item_list = []
-	for item in doc.items:
-		item_temp_qty = item.qty
-		for po in po_list_data:
-			po_temp_qty = po.get("remaining_qty")
-			if po.get("item_code") == item.item_code and po_temp_qty > 0 and item_temp_qty > 0:
-				if item_temp_qty > po_temp_qty:
-					qc_name = frappe.db.get_value("Quality Inspection",{'reference_name':doc.name,'item_code':item.item_code},'name')
-					asset_category = frappe.db.get_value("Item",{'item_code':item.item_code},'asset_category')
-					is_fixed_asset = frappe.db.get_value("Item",{'item_code':item.item_code},'is_fixed_asset')
+# @frappe.whitelist()
+# def map_pr_qty_to_po_qty(doc):
+# 	po_list_data = get_purchase_order(doc.supplier)
+# 	item_list = []
+# 	for item in doc.items:
+# 		item_temp_qty = item.qty
+# 		for po in po_list_data:
+# 			po_temp_qty = po.get("remaining_qty")
+# 			if po.get("item_code") == item.item_code and po_temp_qty > 0 and item_temp_qty > 0:
+# 				if item_temp_qty > po_temp_qty:
+# 					qc_name = frappe.db.get_value("Quality Inspection",{'reference_name':doc.name,'item_code':item.item_code},'name')
+# 					asset_category = frappe.db.get_value("Item",{'item_code':item.item_code},'asset_category')
+# 					is_fixed_asset = frappe.db.get_value("Item",{'item_code':item.item_code},'is_fixed_asset')
 					
-					temp = {
-						'item_code': item.item_code,
-						'item_name': item.item_name,
-						'item_group':item.item_group,
-						'description': item.description,
-						'uom': item.uom,
-						'rate':item.rate,
-						'price_list_rate':item.price_list_rate,
-						'conversion_factor':item.conversion_factor,
-						'cost_center':item.cost_center,
-						'stock_uom': item.stock_uom,
-						'qty':  po_temp_qty,
-						'physically_verified_quantity':item.physically_verified_quantity,
-						'received_qty':po_temp_qty,
-						'purchase_order' : po.get('name'),
-						'purchase_order_item' : po.get('pi_name'),
-						'warehouse' : po.get('warehouse'),
-						'quality_inspection' : qc_name,
-						'is_fixed_asset' :1 if is_fixed_asset else 0,
-						'asset_category':asset_category
-					}
-					item_temp_qty = item_temp_qty  - po_temp_qty
-					po_temp_qty = po_temp_qty -item_temp_qty
-					po['remaining_qty'] = po_temp_qty
-					item_list.append(temp)
+# 					temp = {
+# 						'item_code': item.item_code,
+# 						'item_name': item.item_name,
+# 						'item_group':item.item_group,
+# 						'description': item.description,
+# 						'uom': item.uom,
+# 						'rate':item.rate,
+# 						'price_list_rate':item.price_list_rate,
+# 						'conversion_factor':item.conversion_factor,
+# 						'cost_center':item.cost_center,
+# 						'stock_uom': item.stock_uom,
+# 						'qty':  po_temp_qty,
+# 						'physically_verified_quantity':item.physically_verified_quantity,
+# 						'received_qty':po_temp_qty,
+# 						'purchase_order' : po.get('name'),
+# 						'purchase_order_item' : po.get('pi_name'),
+# 						'warehouse' : po.get('warehouse'),
+# 						'quality_inspection' : qc_name,
+# 						'is_fixed_asset' :1 if is_fixed_asset else 0,
+# 						'asset_category':asset_category
+# 					}
+# 					item_temp_qty = item_temp_qty  - po_temp_qty
+# 					po_temp_qty = po_temp_qty -item_temp_qty
+# 					po['remaining_qty'] = po_temp_qty
+# 					item_list.append(temp)
 
-				elif item_temp_qty <= po_temp_qty:
-					qc_name = frappe.db.get_value("Quality Inspection",{'reference_name':doc.name,'item_code':item.item_code},'name')
-					asset_category = frappe.db.get_value("Item",{'item_code':item.item_code},'asset_category')
-					is_fixed_asset = frappe.db.get_value("Item",{'item_code':item.item_code},'is_fixed_asset')
+# 				elif item_temp_qty <= po_temp_qty:
+# 					qc_name = frappe.db.get_value("Quality Inspection",{'reference_name':doc.name,'item_code':item.item_code},'name')
+# 					asset_category = frappe.db.get_value("Item",{'item_code':item.item_code},'asset_category')
+# 					is_fixed_asset = frappe.db.get_value("Item",{'item_code':item.item_code},'is_fixed_asset')
 					
-					temp = {
-						'item_code': item.item_code,
-						'item_name': item.item_name,
-						'item_group':item.item_group,
-						'description': item.description,
-						'uom': item.uom,
-						'rate':item.rate,
-						'price_list_rate':item.price_list_rate,
-						'conversion_factor':item.conversion_factor,
-						'cost_center':item.cost_center,
-						'stock_uom': item.stock_uom,
-						'qty':  item_temp_qty,
-						'billed_qty':  item.qty,
-						'physically_verified_quantity':item.physically_verified_quantity,
-						'received_qty':item_temp_qty,
-						'purchase_order' : po.get('name'),
-						'purchase_order_item' : po.get('pi_name'),
-						'warehouse' : po.get('warehouse'),
-						'quality_inspection' : qc_name,
-						'is_fixed_asset' :1 if is_fixed_asset else 0,
-						'asset_category':asset_category
-					}
+# 					temp = {
+# 						'item_code': item.item_code,
+# 						'item_name': item.item_name,
+# 						'item_group':item.item_group,
+# 						'description': item.description,
+# 						'uom': item.uom,
+# 						'rate':item.rate,
+# 						'price_list_rate':item.price_list_rate,
+# 						'conversion_factor':item.conversion_factor,
+# 						'cost_center':item.cost_center,
+# 						'stock_uom': item.stock_uom,
+# 						'qty':  item_temp_qty,
+# 						'billed_qty':  item.qty,
+# 						'physically_verified_quantity':item.physically_verified_quantity,
+# 						'received_qty':item_temp_qty,
+# 						'purchase_order' : po.get('name'),
+# 						'purchase_order_item' : po.get('pi_name'),
+# 						'warehouse' : po.get('warehouse'),
+# 						'quality_inspection' : qc_name,
+# 						'is_fixed_asset' :1 if is_fixed_asset else 0,
+# 						'asset_category':asset_category
+# 					}
 					
-					po_temp_qty = po_temp_qty - item_temp_qty
-					# item_temp_qty = item_temp_qty  - item_temp_qty
-					item_temp_qty = 0
-					item_list.append(temp)
-					po['remaining_qty'] = po_temp_qty
+# 					po_temp_qty = po_temp_qty - item_temp_qty
+# 					# item_temp_qty = item_temp_qty  - item_temp_qty
+# 					item_temp_qty = 0
+# 					item_list.append(temp)
+# 					po['remaining_qty'] = po_temp_qty
 
-		if item_temp_qty > 0:
-			qc_name = frappe.db.get_value("Quality Inspection",{'reference_name':doc.name,'item_code':item.item_code},'name')
-			asset_category = frappe.db.get_value("Item",{'item_code':item.item_code},'asset_category')
-			is_fixed_asset = frappe.db.get_value("Item",{'item_code':item.item_code},'is_fixed_asset')
+# 		if item_temp_qty > 0:
+# 			qc_name = frappe.db.get_value("Quality Inspection",{'reference_name':doc.name,'item_code':item.item_code},'name')
+# 			asset_category = frappe.db.get_value("Item",{'item_code':item.item_code},'asset_category')
+# 			is_fixed_asset = frappe.db.get_value("Item",{'item_code':item.item_code},'is_fixed_asset')
 			
-			temp = {
-				'item_code': item.item_code,
-				'item_name': item.item_name,
-				'item_group':item.item_group,
-				'description': item.description,
-				'uom': item.uom,
-				'rate':item.rate,
-				'price_list_rate':item.price_list_rate,
-				'conversion_factor':item.conversion_factor,
-				'cost_center':item.cost_center,
-				'stock_uom': item.stock_uom,
-				'qty':  item_temp_qty,
-				'physically_verified_quantity':item.physically_verified_quantity,
-				'received_qty':item_temp_qty,
-				'warehouse':item.warehouse,
-				'quality_inspection':qc_name,
-				'is_fixed_asset' :1 if is_fixed_asset else 0,
-				'asset_category':asset_category
-			}
-			item_list.append(temp)
+# 			temp = {
+# 				'item_code': item.item_code,
+# 				'item_name': item.item_name,
+# 				'item_group':item.item_group,
+# 				'description': item.description,
+# 				'uom': item.uom,
+# 				'rate':item.rate,
+# 				'price_list_rate':item.price_list_rate,
+# 				'conversion_factor':item.conversion_factor,
+# 				'cost_center':item.cost_center,
+# 				'stock_uom': item.stock_uom,
+# 				'qty':  item_temp_qty,
+# 				'physically_verified_quantity':item.physically_verified_quantity,
+# 				'received_qty':item_temp_qty,
+# 				'warehouse':item.warehouse,
+# 				'quality_inspection':qc_name,
+# 				'is_fixed_asset' :1 if is_fixed_asset else 0,
+# 				'asset_category':asset_category
+# 			}
+# 			item_list.append(temp)
 
 	
-	previous_items = doc.items 
-	doc.items = []
+# 	previous_items = doc.items 
+# 	doc.items = []
 	
-	for item in item_list:
-		doc.append("items", {
-			'item_code': item.get('item_code'),
-			'item_name': item.get('item_name'),
-			'item_group':item.get('item_group'),
-			'description': item.get('description'),
-			'uom': item.get('uom'),
-			'rate':item.get('rate'),
-			'base_rate':item.get('rate'),
-			'price_list_rate':item.get('price_list_rate'),
-			'conversion_factor':item.get('conversion_factor'),
-			'cost_center':item.get('cost_center'),
-			'stock_uom': item.get('stock_uom'),
-			'qty':  item.get('qty'),
-			'billed_qty':  item.get('qty'),
-			'physically_verified_quantity':item.get('physically_verified_quantity'),
-			'received_qty':item.get('received_qty'),
-			'purchase_order' : item.get('purchase_order'),
-			'purchase_order_item' : item.get('purchase_order_item'),
-			'warehouse' : item.get('warehouse'),
-			'quality_inspection' : item.get('quality_inspection'),
-			'is_fixed_asset' : item.get('is_fixed_asset'),
-			'asset_category' : item.get('asset_category')
-		})
+# 	for item in item_list:
+# 		doc.append("items", {
+# 			'item_code': item.get('item_code'),
+# 			'item_name': item.get('item_name'),
+# 			'item_group':item.get('item_group'),
+# 			'description': item.get('description'),
+# 			'uom': item.get('uom'),
+# 			'rate':item.get('rate'),
+# 			'base_rate':item.get('rate'),
+# 			'price_list_rate':item.get('price_list_rate'),
+# 			'conversion_factor':item.get('conversion_factor'),
+# 			'cost_center':item.get('cost_center'),
+# 			'stock_uom': item.get('stock_uom'),
+# 			'qty':  item.get('qty'),
+# 			'billed_qty':  item.get('qty'),
+# 			'physically_verified_quantity':item.get('physically_verified_quantity'),
+# 			'received_qty':item.get('received_qty'),
+# 			'purchase_order' : item.get('purchase_order'),
+# 			'purchase_order_item' : item.get('purchase_order_item'),
+# 			'warehouse' : item.get('warehouse'),
+# 			'quality_inspection' : item.get('quality_inspection'),
+# 			'is_fixed_asset' : item.get('is_fixed_asset'),
+# 			'asset_category' : item.get('asset_category')
+# 		})
+
+
+
+					
+	
 
 
 @frappe.whitelist()
